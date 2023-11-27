@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0-9
+#SBATCH --array=6-7
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -18,7 +18,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=200G
 #SBATCH --time=1-0:00:00
-#SBATCH --gres=gpu:rtx_2080:4
+#SBATCH --gres=gpu:a5000:4
+##SBATCH --exclude=
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
 # For more values, check "man sbatch"
@@ -54,19 +55,21 @@ export TAG=initial
 echo "Tag                            = $TAG"
 
 CONFIGS=(ProtGPT2_51m ProtGPT2_65m ProtGPT2_82m ProtGPT2_97m ProtGPT2_112m ProtGPT2_124m ProtGPT2_146m ProtGPT2_167m)
+STEPS=(10000 7026 5123 3941 3202 2966 2373 1977)
+SSTEP=$(expr $STEPS / 10)
+
 CONFIG=${CONFIGS[$IDX]}
+STEPS=${STEPS[$IDX]}
 echo "Config                         = $CONFIG"
 
-LR=1e-4
+LR=5e-4
 TOTAL_BS=2048
 # 8 is ok for seq length 1024 on a6000, but 16 is too much
-TRAIN_BS=2
+TRAIN_BS=8
 GRAD_ACC=$(expr $TOTAL_BS / $NGPU / $TRAIN_BS)
-#STEPS=125000
-STEPS=10000
 WARMUP=0.04
 
-OUTPUT_DIR=output/$CONFIG-$TAG
+OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC
 
 handle_signal()
 {
@@ -85,20 +88,20 @@ torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --per_device_train_batch_size $TRAIN_BS \
     --gradient_accumulation_steps $GRAD_ACC \
     --learning_rate $LR \
-    --save_steps 2500 \
+    --save_steps $SSTEP \
     --save_total_limit 2 \
-    --bf16 True \
-    --torch_dtype bfloat16 \
     --optim "adamw_torch" \
+    --torch_dtype bfloat16 \
+    --bf16 True \
     --lr_scheduler_type "cosine" \
     --evaluation_strategy "steps" \
-    --eval_steps 2500 \
+    --eval_steps $SSTEP \
     --logging_steps 10 \
     --warmup_ratio $WARMUP \
-    --max_seq_length 1024 \
     --max_steps $STEPS \
     --dataloader_num_workers 8 \
     --ddp_find_unused_parameters False \
+    --max_eval_samples 1000 \
     --output_dir $OUTPUT_DIR
 
 wait;
