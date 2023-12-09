@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=6-7
+#SBATCH --array=0-7
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -18,8 +18,8 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=200G
 #SBATCH --time=1-0:00:00
-#SBATCH --gres=gpu:a5000:4
-##SBATCH --exclude=
+#SBATCH --gres=gpu:4
+#SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914,node211
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
 # For more values, check "man sbatch"
@@ -54,34 +54,36 @@ conda activate ca
 export TAG=initial
 echo "Tag                            = $TAG"
 
-CONFIGS=(ProtGPT2_51m ProtGPT2_65m ProtGPT2_82m ProtGPT2_97m ProtGPT2_112m ProtGPT2_124m ProtGPT2_146m ProtGPT2_167m)
+ARCH=ProtGPT2
+ARCH=ProtLlama2
+
+CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
 STEPS=(10000 7026 5123 3941 3202 2966 2373 1977)
-SSTEP=$(expr $STEPS / 10)
 
 CONFIG=${CONFIGS[$IDX]}
 STEPS=${STEPS[$IDX]}
+SSTEP=$(expr $STEPS / 10)
 echo "Config                         = $CONFIG"
 
-LR=5e-4
+LRs=(1e-4 5e-4 1e-3)
+LR=${LRs[$IDX % 10]}
+
 TOTAL_BS=2048
 # 8 is ok for seq length 1024 on a6000, but 16 is too much
 TRAIN_BS=8
 GRAD_ACC=$(expr $TOTAL_BS / $NGPU / $TRAIN_BS)
 WARMUP=0.04
+SEED=42
 
-OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC
+OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
-handle_signal()
-{
-    echo "$(date) Signal receive..."
-    kill -s SIGUSR1 $PID
-}
-trap handle_signal SIGUSR1
+echo "Output directory               = $OUTPUT_DIR"
+echo "Eval/Save steps                = $SSTEP"
 
 # comment out --model_name_or_path to random initialize
 torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --config_name configs/$CONFIG.json \
-    --tokenizer_name gpt2 \
+    --tokenizer_name nferruz/ProtGPT2 \
     --dataset_name nferruz/UR50_2021_04 \
     --do_train \
     --do_eval \
