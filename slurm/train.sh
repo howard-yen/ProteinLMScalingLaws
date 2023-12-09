@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0-23
+#SBATCH --array=0-7
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -17,8 +17,8 @@
 #SBATCH --ntasks-per-node 1                         ##tasks
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=200G
-#SBATCH --time=2-0:00:00
-#SBATCH --gres=gpu:2
+#SBATCH --time=0-1:00:00
+#SBATCH --gres=gpu:rtx_3090:2
 #SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
@@ -58,24 +58,28 @@ ARCH=ProtGPT2
 STEPS=(10000 7026 5123 3941 3202 2966 2373 1977) # gpt2
 
 #ARCH=ProtLlama2
-#STEPS=(10000 8046 6547 5686 5025 4465 3887 3442) # llama 
+#STEPS=(10000 8046 6547 5686 5025 4465 3887 3442) # llama
 
 CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
 
-CONFIG=${CONFIGS[$IDX]}
+CONFIG=${CONFIGS[$IDX % 8]}
 STEPS=${STEPS[$IDX]}
 SSTEP=$(expr $STEPS / 10)
+
+STEPS=100
+SSTEP=1000
 echo "Config                         = $CONFIG"
 
 LRs=(1e-4 5e-4 1e-3)
-LR=${LRs[$IDX % 8]}
+LR=${LRs[$IDX / 8]}
 
 TOTAL_BS=2048
+TOTAL_BS=32
 # 8 is ok for seq length 1024 on a6000, but 16 is too much
 TRAIN_BS=8
 GRAD_ACC=$(expr $TOTAL_BS / $NGPU / $TRAIN_BS)
 WARMUP=0.04
-SEED=43
+SEED=42
 
 OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
