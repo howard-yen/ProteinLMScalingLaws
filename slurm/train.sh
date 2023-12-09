@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0-7
+#SBATCH --array=0-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -17,9 +17,9 @@
 #SBATCH --ntasks-per-node 1                         ##tasks
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=200G
-#SBATCH --time=1-0:00:00
-#SBATCH --gres=gpu:4
-#SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914,node211
+#SBATCH --time=2-0:00:00
+#SBATCH --gres=gpu:2
+#SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
 # For more values, check "man sbatch"
@@ -75,7 +75,7 @@ TOTAL_BS=2048
 TRAIN_BS=8
 GRAD_ACC=$(expr $TOTAL_BS / $NGPU / $TRAIN_BS)
 WARMUP=0.04
-SEED=42
+SEED=43
 
 OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
