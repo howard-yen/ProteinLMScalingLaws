@@ -55,10 +55,12 @@ export TAG=initial
 echo "Tag                            = $TAG"
 
 ARCH=ProtGPT2
-ARCH=ProtLlama2
+STEPS=(10000 7026 5123 3941 3202 2966 2373 1977) # gpt2
+
+#ARCH=ProtLlama2
+#STEPS=(10000 8046 6547 5686 5025 4465 3887 3442) # llama 
 
 CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
-STEPS=(10000 7026 5123 3941 3202 2966 2373 1977)
 
 CONFIG=${CONFIGS[$IDX]}
 STEPS=${STEPS[$IDX]}
@@ -66,7 +68,7 @@ SSTEP=$(expr $STEPS / 10)
 echo "Config                         = $CONFIG"
 
 LRs=(1e-4 5e-4 1e-3)
-LR=${LRs[$IDX % 10]}
+LR=${LRs[$IDX % 8]}
 
 TOTAL_BS=2048
 # 8 is ok for seq length 1024 on a6000, but 16 is too much
