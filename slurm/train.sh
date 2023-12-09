@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=4,7
+#SBATCH --array=0-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -47,7 +47,7 @@ IDX=$SLURM_ARRAY_TASK_ID
 NGPU=$SLURM_GPUS_ON_NODE
 
 if [[ -z $IDX ]]; then IDX=0; fi
-if [[ -z $NGPU ]]; then IDX=1; fi
+if [[ -z $NGPU ]]; then NGPU=1; fi
 
 conda activate ca
 
@@ -55,10 +55,10 @@ export TAG=initial
 echo "Tag                            = $TAG"
 
 ARCH=ProtGPT2
-STEPS=(10000 7026 5123 3941 3202 2966 2373 1977) # gpt2
+STEPS=(10000 7026 5123 5123 3941 3202 2966 2373 1977) # gpt2
 
 #ARCH=ProtLlama2
-#STEPS=(10000 8046 6547 5686 5025 4465 3887 3442) # llama
+#STEPS=(10000 7728 6069 5052 4327 3905 3291 2844) # llama
 
 CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
 
@@ -66,15 +66,12 @@ CONFIG=${CONFIGS[$IDX % 8]}
 STEPS=${STEPS[$IDX]}
 SSTEP=$(expr $STEPS / 10)
 
-STEPS=100
-SSTEP=1000
 echo "Config                         = $CONFIG"
 
-LRs=(1e-4 5e-4 1e-3)
+LRs=(5e-4 1e-3 5e-3)
 LR=${LRs[$IDX / 8]}
 
 TOTAL_BS=2048
-TOTAL_BS=32
 # 8 is ok for seq length 1024 on a6000, but 16 is too much
 TRAIN_BS=8
 GRAD_ACC=$(expr $TOTAL_BS / $NGPU / $TRAIN_BS)

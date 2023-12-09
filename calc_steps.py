@@ -6,6 +6,7 @@ import math
 arch = "ProtGPT2"
 paths = glob.glob(f"output/{arch}*bs32*")
 field = "train_runtime"
+field = "total_flos"
 
 smallest = 1e30
 total_steps = 10000
