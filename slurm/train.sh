@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0-23
+#SBATCH --array=16-19
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -17,8 +17,8 @@
 #SBATCH --ntasks-per-node 1                         ##tasks
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=200G
-#SBATCH --time=0-1:00:00
-#SBATCH --gres=gpu:rtx_3090:2
+#SBATCH --time=2-0:00:00
+#SBATCH --gres=gpu:a5000:2
 #SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
@@ -51,7 +51,7 @@ if [[ -z $NGPU ]]; then NGPU=1; fi
 
 conda activate ca
 
-export TAG=initial
+export TAG=final
 echo "Tag                            = $TAG"
 
 ARCH=ProtGPT2
@@ -63,7 +63,7 @@ STEPS=(10000 7026 5123 5123 3941 3202 2966 2373 1977) # gpt2
 CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
 
 CONFIG=${CONFIGS[$IDX % 8]}
-STEPS=${STEPS[$IDX]}
+STEPS=${STEPS[$IDX % 8]}
 SSTEP=$(expr $STEPS / 10)
 
 echo "Config                         = $CONFIG"
@@ -107,6 +107,7 @@ torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --dataloader_num_workers 8 \
     --ddp_find_unused_parameters False \
     --max_eval_samples 1000 \
+    --cache_dir cache \
     --output_dir $OUTPUT_DIR
 
 wait;
