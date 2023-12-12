@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=20-23
+#SBATCH --array=0,8,16
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -16,10 +16,10 @@
 #SBATCH -N 1                                        ##nodes
 #SBATCH --ntasks-per-node 1                         ##tasks
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=180G
-#SBATCH --time=2-0:00:00
-#SBATCH --gres=gpu:a6000:2
-#SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914
+#SBATCH --mem=200G
+#SBATCH --time=1-0:00:00
+#SBATCH --gres=gpu:1
+#SBATCH --constraint=gpu80
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
 # For more values, check "man sbatch"
@@ -49,16 +49,18 @@ NGPU=$SLURM_GPUS_ON_NODE
 if [[ -z $IDX ]]; then IDX=0; fi
 if [[ -z $NGPU ]]; then NGPU=1; fi
 
-conda activate ca
+#condainit
+module load anaconda3/2023.9
+conda activate hky
 
 export TAG=v2
 echo "Tag                            = $TAG"
 
-ARCH=ProtGPT2
-STEPS=(10000 7026 5123 3941 3202 2966 2373 1977) # gpt2
+#ARCH=ProtGPT2
+#STEPS=(10000 7026 5123 5123 3941 3202 2966 2373 1977) # gpt2
 
-#ARCH=ProtLlama2
-#STEPS=(10000 7728 6069 5052 4327 3905 3291 2844) # llama
+ARCH=ProtLlama2
+STEPS=(10000 7728 6069 5052 4327 3905 3291 2844) # llama
 
 CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
 
@@ -73,7 +75,7 @@ LR=${LRs[$IDX / 8]}
 
 TOTAL_BS=2048
 # 8 is ok for seq length 1024 on a6000, but 16 is too much
-TRAIN_BS=8
+TRAIN_BS=32
 GRAD_ACC=$(expr $TOTAL_BS / $NGPU / $TRAIN_BS)
 WARMUP=0.04
 SEED=42
@@ -81,13 +83,14 @@ SEED=42
 OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
 echo "Output directory               = $OUTPUT_DIR"
+echo "Total steps                    = $STEPS"
 echo "Eval/Save steps                = $SSTEP"
 
 # comment out --model_name_or_path to random initialize
 torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --config_name configs/$CONFIG.json \
     --tokenizer_name nferruz/ProtGPT2 \
-    --dataset_name nferruz/UR50_2021_04 \
+    --dataset_name datasetyay.hf \
     --do_train \
     --do_eval \
     --per_device_train_batch_size $TRAIN_BS \
