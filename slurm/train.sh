@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=plm ## CHANGE JOBNAME HERE
-#SBATCH --array=16-19
+#SBATCH --array=20-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -16,9 +16,9 @@
 #SBATCH -N 1                                        ##nodes
 #SBATCH --ntasks-per-node 1                         ##tasks
 #SBATCH --cpus-per-task=8
-#SBATCH --mem=200G
+#SBATCH --mem=180G
 #SBATCH --time=2-0:00:00
-#SBATCH --gres=gpu:a5000:2
+#SBATCH --gres=gpu:a6000:2
 #SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
@@ -51,11 +51,11 @@ if [[ -z $NGPU ]]; then NGPU=1; fi
 
 conda activate ca
 
-export TAG=final
+export TAG=v2
 echo "Tag                            = $TAG"
 
 ARCH=ProtGPT2
-STEPS=(10000 7026 5123 5123 3941 3202 2966 2373 1977) # gpt2
+STEPS=(10000 7026 5123 3941 3202 2966 2373 1977) # gpt2
 
 #ARCH=ProtLlama2
 #STEPS=(10000 7728 6069 5052 4327 3905 3291 2844) # llama
@@ -64,7 +64,7 @@ CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_12
 
 CONFIG=${CONFIGS[$IDX % 8]}
 STEPS=${STEPS[$IDX % 8]}
-SSTEP=$(expr $STEPS / 10)
+SSTEP=$(expr $STEPS / 5)
 
 echo "Config                         = $CONFIG"
 
@@ -94,7 +94,7 @@ torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --gradient_accumulation_steps $GRAD_ACC \
     --learning_rate $LR \
     --save_steps $SSTEP \
-    --save_total_limit 2 \
+    --save_total_limit 5 \
     --optim "adamw_torch" \
     --torch_dtype bfloat16 \
     --bf16 True \
