@@ -4,11 +4,12 @@ import torch
 
 from transformers import AutoConfig, AutoModelForCausalLM
 
-arch = "ProtGPT2"
+arch = "ProtLlama2"
 params = {}
 paths = sorted(glob.glob(f"configs/{arch}*"))
 
 dummy = torch.ones(1, 1024, dtype=torch.long)
+print("Name,Num parameters (M),Hidden size,Intermediate size,Num attention heads,Num layers")
 
 for p in paths:
     # print(p)
@@ -18,9 +19,9 @@ for p in paths:
     params[p] = sum(p.numel() if "wte" not in n and "wpe" not in n else 0 for n, p in m.named_parameters())
 
     if "ProtGPT2" in p:
-        print("ProtGPT2", params[p] / 1e6, config.n_embd, config.n_inner, config.n_head, config.n_layer)
+        print(f"ProtGPT2,{params[p] / 1e6},{config.n_embd},{config.n_inner},{config.n_head},{config.n_layer}")
     else:
-        print("ProtLlama2", params[p] / 1e6, config.hidden_size, config.intermediate_size, config.num_attention_heads, config.num_hidden_layers)
+        print(f"ProtLlama2,{params[p] / 1e6},{config.hidden_size},{config.intermediate_size},{config.num_attention_heads},{config.num_hidden_layers}")
 
 params = dict(sorted(params.items(), key=lambda x: x[1]))
 print("total params:", params)
