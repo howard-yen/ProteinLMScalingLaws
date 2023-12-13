@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=eval_plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0
+#SBATCH --array=0-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -51,7 +51,7 @@ if [[ -z $NGPU ]]; then NGPU=1; fi
 
 conda activate ca
 
-export TAG=final
+export TAG=v2
 echo "Tag                            = $TAG"
 
 ARCH=ProtGPT2
@@ -70,26 +70,7 @@ SEED=42
 
 OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
-echo "Output directory               = $OUTPUT_DIR"
-
-for OD in $OUTPUT_DIR/checkpoint-*; do
-    echo "Evaluating $OD"
-    torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
-        --config_name configs/$CONFIG.json \
-        --tokenizer_name nferruz/ProtGPT2 \
-        --dataset_name nferruz/UR50_2021_04 \
-        --model_name_or_path $OD \
-        --do_train False \
-        --do_eval True \
-        --torch_dtype bfloat16 \
-        --bf16 True \
-        --dataloader_num_workers 8 \
-        --per_device_eval_batch_size 32 \
-        --ddp_find_unused_parameters False \
-        --cache_dir cache \
-        --max_eval_samples 100000 \
-        --output_dir $OD
-done
+echo "Evaluating output directory               = $OUTPUT_DIR"
 
 torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --config_name configs/$CONFIG.json \
@@ -105,7 +86,32 @@ torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --cache_dir cache \
     --per_device_eval_batch_size 32 \
     --max_eval_samples 100000 \
+    --prediction_loss_only True \
     --output_dir $OUTPUT_DIR
+
+for OD in "$OUTPUT_DIR/checkpoint-"*; do
+    echo "Evaluating output dir $OD"
+    if ! [[ -f $OD/all_results.json ]]; then
+        torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
+            --config_name configs/$CONFIG.json \
+            --tokenizer_name nferruz/ProtGPT2 \
+            --dataset_name nferruz/UR50_2021_04 \
+            --model_name_or_path $OD \
+            --do_train False \
+            --do_eval True \
+            --torch_dtype bfloat16 \
+            --bf16 True \
+            --dataloader_num_workers 8 \
+            --per_device_eval_batch_size 32 \
+            --ddp_find_unused_parameters False \
+            --cache_dir cache \
+            --max_eval_samples 100000 \
+            --prediction_loss_only True \
+            --output_dir $OD
+    else
+        echo "all_results.json already exists"
+    fi
+done
 
 wait;
 
