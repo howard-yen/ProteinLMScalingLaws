@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=eval_plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0
+#SBATCH --array=9-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -18,14 +18,13 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=50G
 #SBATCH --time=0-1:00:00
-#SBATCH --gres=gpu:rtx_3090:2
-##SBATCH --exclude=node004,node005,node006,node008,node901,node902,node912,node913,node914
+#SBATCH --gres=gpu:4
 # Turn on mail notification. There are many possible self-explaining values:
 # NONE, BEGIN, END, FAIL, ALL (including all aforementioned)
 # For more values, check "man sbatch"
 #SBATCH --mail-type=ALL
 # Remember to set your email address here instead of nobody
-#SBATCH --mail-user=hyen@princeton.edu
+#SBATCH --mail-user=vhchu@princeton.edu
 
 echo "Date              = $(date)"
 echo "Hostname          = $(hostname -s)"
@@ -49,12 +48,13 @@ NGPU=$SLURM_GPUS_ON_NODE
 if [[ -z $IDX ]]; then IDX=0; fi
 if [[ -z $NGPU ]]; then NGPU=1; fi
 
-conda activate ca
+conda activate hky
+cd /scratch/gpfs/vhchu/cos597n
 
-export TAG=final
+export TAG=initial
 echo "Tag                            = $TAG"
 
-ARCH=ProtGPT2
+ARCH=ProtLlama2
 CONFIGS=(${ARCH}_51m ${ARCH}_65m ${ARCH}_82m ${ARCH}_97m ${ARCH}_112m ${ARCH}_124m ${ARCH}_146m ${ARCH}_167m)
 
 CONFIG=${CONFIGS[$IDX % 8]}
@@ -65,36 +65,16 @@ LRs=(5e-4 1e-3 5e-3)
 LR=${LRs[$IDX / 8]}
 
 TOTAL_BS=2048
-GRAD_ACC=128
+GRAD_ACC=64
 SEED=42
+
 
 OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
 echo "Output directory               = $OUTPUT_DIR"
 
-for OD in $OUTPUT_DIR/checkpoint-*; do
-    echo "Evaluating $OD"
-    torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
-        --config_name configs/$CONFIG.json \
-        --tokenizer_name nferruz/ProtGPT2 \
-        --dataset_name nferruz/UR50_2021_04 \
-        --model_name_or_path $OD \
-        --do_train False \
-        --do_eval True \
-        --torch_dtype bfloat16 \
-        --bf16 True \
-        --dataloader_num_workers 8 \
-        --per_device_eval_batch_size 32 \
-        --ddp_find_unused_parameters False \
-        --cache_dir cache \
-        --max_eval_samples 100000 \
-        --output_dir $OD
-done
-
 torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
-    --config_name configs/$CONFIG.json \
-    --tokenizer_name nferruz/ProtGPT2 \
-    --dataset_name nferruz/UR50_2021_04 \
+    --dataset_name datasetyay.hf \
     --model_name_or_path $OUTPUT_DIR \
     --do_train False \
     --do_eval True \
@@ -105,7 +85,28 @@ torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
     --cache_dir cache \
     --per_device_eval_batch_size 32 \
     --max_eval_samples 100000 \
+    --prediction_loss_only True \
     --output_dir $OUTPUT_DIR
+
+exit 0;
+
+for OD in "$OUTPUT_DIR/checkpoint-"*; do
+    echo "Evaluating $OD"
+    torchrun --nproc_per_node $NGPU --master_port $PORT run_clm.py \
+        --dataset_name datasetyay.hf \
+        --model_name_or_path $OD \
+        --do_train False \
+        --do_eval True \
+        --torch_dtype bfloat16 \
+        --bf16 True \
+        --dataloader_num_workers 8 \
+        --per_device_eval_batch_size 32 \
+        --ddp_find_unused_parameters False \
+        --cache_dir cache \
+        --max_eval_samples 100000 \
+        --prediction_loss_only True \
+        --output_dir $OD
+done
 
 wait;
 
