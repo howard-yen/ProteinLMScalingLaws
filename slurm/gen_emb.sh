@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=gen_emb ## CHANGE JOBNAME HERE
-#SBATCH --array=0
+#SBATCH --array=0-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -51,7 +51,7 @@ if [[ -z $NGPU ]]; then NGPU=1; fi
 
 conda activate ca
 
-export TAG=final
+export TAG=v2
 echo "Tag                            = $TAG"
 
 ARCH=ProtGPT2
@@ -72,11 +72,13 @@ OUTPUT_DIR=output/$CONFIG-$TAG-lr$LR-bs$TOTAL_BS-gc$GRAD_ACC-$SEED
 
 echo "Output directory               = $OUTPUT_DIR"
 
-for DATA in "protein_sequence_records_df.csv SKEMPI_seq.csv"; do
+for DATA in protein_sequence_records_df.csv SKEMPI_seq.csv; do
+    echo "encoding $DATA"
     python generate_embeddings.py \
         --model_path $OUTPUT_DIR \
         --data_path $DATA \
-        --output_path $OUTPUT_DIR/$DATA
+        --output_path $OUTPUT_DIR/encoded_$DATA
+    echo "finished: $OUTPUT_DIR/encoded_$DATA"
 done
 
 wait;
