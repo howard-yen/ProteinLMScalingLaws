@@ -6,7 +6,7 @@ import pandas as pd
 from tqdm import tqdm
 
 import torch
-from transformers import AutoTokenizer, AutoModel   
+from transformers import AutoTokenizer, AutoModel
 
 def mean_pooling(token_embeddings, mask):
     token_embeddings = token_embeddings.masked_fill(~mask[..., None].bool(), 0.)
@@ -16,7 +16,7 @@ def mean_pooling(token_embeddings, mask):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--data_path", type=str, default="csv file path with pairs protein name and protein sequence") 
+    parser.add_argument("--data_path", type=str, default="csv file path with pairs protein name and protein sequence")
     parser.add_argument("--output_path", type=str, default="output path for embeddings")
     parser.add_argument("--model_path", type=str, default="path to model")
 
@@ -37,8 +37,9 @@ def main():
             embedding = mean_pooling(last_hidden_states, inputs['attention_mask'])
             embeddings.append([row[0]] + embedding.tolist()[0])
             inputs = {k: v.cpu() for k, v in inputs.items()}
+    embeddings.insert(0, ["PDB_ID" if "SKEMPI" in args.data_path else "Entry"] + [i for i in range(embedding.shape[1])])
     embeddings = pd.DataFrame(embeddings)
     embeddings.to_csv(args.output_path, index=False, header=None)
-            
+
 if __name__ == "__main__":
     main()

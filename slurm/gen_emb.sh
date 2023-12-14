@@ -77,7 +77,8 @@ for DATA in protein_sequence_records_df.csv SKEMPI_seq.csv; do
     python generate_embeddings.py \
         --model_path $OUTPUT_DIR \
         --data_path $DATA \
-        --output_path $OUTPUT_DIR/$DATA
+        --output_path $OUTPUT_DIR/encoded_$DATA
+    echo "finished: $OUTPUT_DIR/encoded_$DATA"
 done
 
 wait;
