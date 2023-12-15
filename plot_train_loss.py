@@ -10,17 +10,18 @@ from model_params import config_to_params
 
 sns.set(font_scale=2.2)
 
-arch = "ProtLlama2"
+arch = "ProtGPT2"
 total_bs = 2048
-grad_acc = 64
+grad_acc = 128
 seed = 42
-flos_threshold = 0
+flos_min = 0
+flos_max = 8e14
 
 with open(f"{arch}_total_flos.json") as f:
     flos_map = json.load(f)
 
-output_dir_base = f"/scratch/gpfs/vhchu/cos597n/output"
-tag = "initial"
+output_dir_base = f"output"
+tag = "v2"
 configs = [f"{arch}_51m", f"{arch}_65m", f"{arch}_82m", f"{arch}_97m", f"{arch}_112m", f"{arch}_124m", f"{arch}_146m", f"{arch}_167m"]
 
 all_results = []
@@ -39,7 +40,7 @@ for config in configs:
 print(all_results)
 
 df = pd.DataFrame(all_results)
-df = df[df["flos"] >= flos_threshold]
+df = df[df["flos"] >= flos_min][df["flos"] <= flos_max]
 g = sns.relplot(data = df, x="flos", y="loss", hue="config", kind="line", row="lr", aspect=4, facet_kws={"sharey": False, "sharex": True})
 g.set_ylabels("train loss")
 plt.savefig(f"{arch}_training_curves.png", dpi=500)
