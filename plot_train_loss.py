@@ -20,7 +20,7 @@ with open(f"{arch}_total_flos.json") as f:
     flos_map = json.load(f)
 
 output_dir_base = f"/scratch/gpfs/vhchu/cos597n/output"
-tag = "initial"
+tag = "v2"
 configs = [f"{arch}_51m", f"{arch}_65m", f"{arch}_82m", f"{arch}_97m", f"{arch}_112m", f"{arch}_124m", f"{arch}_146m", f"{arch}_167m"]
 
 all_results = []
