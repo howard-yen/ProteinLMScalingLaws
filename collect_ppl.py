@@ -33,7 +33,6 @@ for config in configs:
             if config not in best_final_loss or best_final_loss[config]["loss"] > r["eval_loss"]:
                 best_final_loss[config] = final_loss[-1]
 
-        checkpoints = []
         for i, checkpoint in enumerate(checkpoints):
             with open(os.path.join(checkpoint, "all_results.json")) as f:
                 r = json.load(f)

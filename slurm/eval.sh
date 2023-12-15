@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=eval_plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0-23
+#SBATCH --array=22-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
@@ -46,7 +46,7 @@ export OMP_NUM_THREADS=8
 IDX=$SLURM_ARRAY_TASK_ID
 NGPU=$SLURM_GPUS_ON_NODE
 
-if [[ -z $IDX ]]; then IDX=0; fi
+if [[ -z $IDX ]]; then IDX=6; fi
 if [[ -z $NGPU ]]; then NGPU=1; fi
 
 conda activate ca
