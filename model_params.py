@@ -1,0 +1,18 @@
+config_to_params = {
+    "ProtGPT2_51m": 25.2,
+    "ProtGPT2_65m": 35.9,
+    "ProtGPT2_82m": 49.2,
+    "ProtGPT2_97m": 64.0,
+    "ProtGPT2_112m": 78.8,
+    "ProtGPT2_124m": 85.1,
+    "ProtGPT2_146m": 106.3,
+    "ProtGPT2_167m": 127.6,
+    "ProtLlama2_51m": 85.0,
+    "ProtLlama2_65m": 105.7,
+    "ProtLlama2_82m": 129.9,
+    "ProtLlama2_97m": 149.5,
+    "ProtLlama2_112m": 169.2,
+    "ProtLlama2_124m": 190.5,
+    "ProtLlama2_146m": 218.8,
+    "ProtLlama2_167m": 247.1,
+}
