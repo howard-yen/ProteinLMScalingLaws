@@ -6,7 +6,7 @@
 
 # Give your job a name, so you can recognize it in the queue overview
 #SBATCH --job-name=eval_plm ## CHANGE JOBNAME HERE
-#SBATCH --array=0-23
+#SBATCH --array=2-23
 
 # Remove one # to uncommment
 #SBATCH --output=./joblog/%x-%A_%a.out                          ## Stdout
