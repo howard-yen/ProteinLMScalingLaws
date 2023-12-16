@@ -49,7 +49,7 @@ for config in configs:
                 r = json.load(f)
                 step = int(checkpoint.split('-')[-1])
                 flos = step * flos_map[config]
-                all_results.append({"config": f"{config.split('_')[0]} {config_to_params[config]:.0f}M", "lr": lr, "step": step, "flos": flos, "loss": r["eval_loss"]})
+                all_results.append({"config": f"{config.split('_')[0]} {config_to_params[config]/1e6:.0f}M", "lr": lr, "step": step, "flos": flos, "loss": r["eval_loss"]})
 
 yaml_template = """
 representation_name: {config}

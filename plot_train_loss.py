@@ -15,7 +15,7 @@ total_bs = 2048
 grad_acc = 128
 seed = 42
 flos_min = 0
-flos_max = 8e14
+flos_max = 774761349120000
 
 with open(f"{arch}_total_flos.json") as f:
     flos_map = json.load(f)
@@ -35,7 +35,7 @@ for config in configs:
             for log in r["log_history"]:
                 if "loss" in log:
                     flos = log["step"] * flos_map[config]
-                    all_results.append({"config": f"{config.split('_')[0]} {config_to_params[config]:.0f}M","lr": lr, "step": log["step"], "flos": flos, "loss": log["loss"]})
+                    all_results.append({"config": f"{config.split('_')[0]} {config_to_params[config]/1e6:.0f}M","lr": lr, "step": log["step"], "flos": flos, "loss": log["loss"]})
 
 print(all_results)
 
