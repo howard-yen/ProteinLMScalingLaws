@@ -66,6 +66,7 @@ detailed_output: False
 for config, v in best_final_loss.items():
     with open(f"PROBE/bin/{config}.yaml", "w") as f:
         f.write(yaml_template.format(**v))
+    print(f"{config.split('_')[0]} {config_to_params[config]/1e6:.0f}M,{v['lr']},{v['loss']:.02f}")
 
 print("making figure...")
 df = pd.DataFrame(all_results)
